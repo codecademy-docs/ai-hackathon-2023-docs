@@ -6,7 +6,7 @@ on:
       - master
 
 jobs:
-  moderation-comment:
+  ai-moderation-comment:
     runs-on: ubuntu-latest
     name: An example job to comment a PR
     steps:
