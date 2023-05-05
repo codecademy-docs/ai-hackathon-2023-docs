@@ -1,4 +1,5 @@
-name: AI Moderation
+name: AI Moderation Comment
+# Note: this is just a POC for 2023 hackathon, not prod ready!
 
 on:
   pull_request:
@@ -6,15 +7,39 @@ on:
       - master
 
 jobs:
-  moderation-comment:
+  ai-moderation-comment:
+    if: github.repository_owner == 'codecademy-docs' # dont run on a fork that doesnt have openai key
+    name: AI moderation comment
+    permissions: write-all
     runs-on: ubuntu-latest
-    name: An example job to comment a PR
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # important for changed-files action
+          
+      - name: Get newly added files in content dir
+        id: changed-files
+        uses: tj-actions/changed-files@v35
+        with:
+          files: 'content/**/*.md'
+      
+      - name: Echo the list of new md files in content dir
+        run: |
+          for file in ${{ steps.changed-files.outputs.added_files }}; do
+            echo "$file was added\n"
+          done
+      
+      # TODO: stop the job if there are no files in the list
+      - name: Ask OpenAI
+        id: openai
+        uses: codecademy-docs/openai-moderation-action@main
+        with:
+          OPEN_AI_API_KEY: ${{ secrets.OPEN_AI_API_KEY }}
+          filepaths: ${{ steps.changed-files.outputs.added_files }}
 
       - name: Comment PR
         uses: thollander/actions-comment-pull-request@v2
         with:
           message: |
-            Hello world ! :wave:
+            The ai response: ${{ steps.openai.outputs.message }}
