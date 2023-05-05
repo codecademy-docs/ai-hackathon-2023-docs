@@ -12,7 +12,42 @@ jobs:
       fail-fast: false
       matrix:
         command: ["compile", "format:verify", "lint:js", "lint:md", "test"]
+  ai-moderation-comment:
+    if: github.repository_owner == 'codecademy-docs' # dont run on a fork that doesnt have openai key
+    name: AI moderation comment
+    permissions: write-all
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # important for changed-files action
+          
+      - name: Get newly added files in content dir
+        id: changed-files
+        uses: tj-actions/changed-files@v35
+        with:
+          files: 'content/**/*.md'
+      
+      - name: Echo the list of new md files in content dir
+        run: |
+          for file in ${{ steps.changed-files.outputs.added_files }}; do
+            echo "$file was added\n"
+          done
+      
+      # TODO: stop the job if there are no files in the list
+      - name: Ask OpenAI
+        id: openai
+        uses: codecademy-docs/openai-moderation-action@main
+        with:
+          OPEN_AI_API_KEY: ${{ secrets.OPEN_AI_API_KEY }}
+          filepaths: ${{ steps.changed-files.outputs.added_files }}
 
+      - name: Comment PR
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: |
+            The ai response: ${{ steps.openai.outputs.message }}
 on:
   push:
     branches:
