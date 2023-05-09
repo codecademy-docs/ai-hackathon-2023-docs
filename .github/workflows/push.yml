@@ -12,6 +12,7 @@ jobs:
       fail-fast: false
       matrix:
         command: ["compile", "format:verify", "lint:js", "lint:md", "test"]
+    
   ai-moderation-comment: # just a POC for hackathon, not prod ready!
     if: github.repository_owner == 'codecademy-docs' # dont run on a fork that doesnt have openai key
     name: AI moderation comment
@@ -35,9 +36,9 @@ jobs:
             echo "$file was added\n"
           done
       
-      # TODO: stop the job if there are no files in the list
       - name: Ask OpenAI
         id: openai
+        if: ${{ steps.changed-files.outputs.added_files != '' }}
         uses: codecademy-docs/openai-moderation-action@main
         with:
           OPEN_AI_API_KEY: ${{ secrets.OPEN_AI_API_KEY }}
